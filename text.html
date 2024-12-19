@@ -1,0 +1,202 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center ml-3">
+            <h2>Employee Attendance</h2>
+            <a href="{{ route('dashboard') }}" class="btn btn-black mb-5 mt-3 mr-3">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+
+        <!-- Card Container -->
+        <div class="card m-4">
+            <div class="row">
+                <!-- Department Dropdown -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <select name="department" id="department" class="employee-input form-control" required>
+                            <option value="All">All</option>
+                            <option value="HR">HR</option>
+                            <option value="IT">IT</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Marketing">Marketing</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" name="date" id="date" class="employee-input form-control" required>
+                    </div>
+                </div>
+
+                <!-- Get Employee Button -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <button id="getEmployee" class="btn btn-primary btn-block" style="margin-top: 32px;">Get
+                            Employee</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Table -->
+        <div class="card m-4">
+            <form action="#" method="POST">
+                @csrf
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Attendance By</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody">
+                            <!-- Employees will be inserted here by AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-center mb-4">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave Modal -->
+    <div id="leaveModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="leaveModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveModalLabel">Leave Details</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="leaveForm">
+                        <input type="hidden" id="employeeId">
+                        <div class="form-group">
+                            <label for="leaveReason">Reason for Leave</label>
+                            <textarea id="leaveReason" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveDate">Date</label>
+                            <input type="date" id="leaveDate" class="form-control" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="saveLeaveDetails">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include jQuery Library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include Bootstrap JS and Popper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const employeeTableBody = $('#employeeTableBody');
+
+            // Function to fetch and display employees
+            function fetchEmployees(department = 'All') {
+                $.ajax({
+                    url: "{{ route('attendence.getEmployeesByDepartment') }}", // Route to get employees
+                    method: "GET",
+                    data: {
+                        department: department,
+                    },
+                    success: function(response) {
+                        console.log("Employees:", response);
+                       
+
+                        employeeTableBody.empty(); // Clear existing table rows
+
+                        if (response && response.length > 0) {
+                            response.forEach(function(employee) {
+                                var row = `
+                                <tr>
+                                    <td>${employee.id}</td>
+                                    <td>${employee.first_name}</td>
+                                    <td>{{ $username }}</td>
+                                    <td><input type="time" name="check_in[${employee.id}]" value="09:00" class="form-control"></td>
+                                    <td><input type="time" name="check_out[${employee.id}]" value="18:00" class="form-control"></td>
+                                    <td>
+                                        <select name="status[${employee.id}]" class="form-control status-dropdown" data-employee-id="${employee.id}">
+                                            <option value="present" ${employee.status === 'present' ? 'selected' : ''}>Present</option>
+                                            <option value="leave" ${employee.status === 'leave' ? 'selected' : ''}>Leave</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            `;
+                                employeeTableBody.append(row);
+                            });
+                        } else {
+                            employeeTableBody.append(
+                                '<tr><td colspan="7" class="text-center">No Employees found</td></tr>'
+                                );
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching employees:", error);
+                    },
+                });
+            }
+
+            // Fetch all employees when the page loads
+            fetchEmployees();
+
+            // Fetch employees based on department when the "Get Employee" button is clicked
+            $('#getEmployee').click(function() {
+                var department = $('#department').val();
+                fetchEmployees(department);
+            });
+
+            // Show popup on Leave option selection
+            $(document).on('change', '.status-dropdown', function() {
+                const selectedStatus = $(this).val();
+                const employeeId = $(this).data('employee-id');
+
+                if (selectedStatus === 'leave') {
+                    // Set employee ID in modal
+                    $('#employeeId').val(employeeId);
+                    // Show the modal
+                    $('#leaveModal').modal('show');
+                }
+            });
+
+            // Handle Save Leave Details
+            $('#saveLeaveDetails').click(function() {
+                const employeeId = $('#employeeId').val();
+                const leaveReason = $('#leaveReason').val();
+                const leaveDate = $('#leaveDate').val();
+
+                if (leaveReason && leaveDate) {
+                    console.log(`Leave saved for Employee ID: ${employeeId}`);
+                    console.log(`Reason: ${leaveReason}, Date: ${leaveDate}`);
+                    // Close the modal
+                    $('#leaveModal').modal('hide');
+                } else {
+                    alert('Please fill in all fields.');
+                }
+            });
+        });
+    </script>
+@endsection
