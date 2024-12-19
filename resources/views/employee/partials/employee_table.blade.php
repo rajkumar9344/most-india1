@@ -45,6 +45,7 @@
 <td data-column="35">{{ $employee->insurance_coverage }}</td>
 
 
+
     <td data-column="50">
         @if ($employee->status == 'Active')
         <button class="btn btn-m btn-success">
