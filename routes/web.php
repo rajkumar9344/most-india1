@@ -71,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/store', [OnsiteController::class, 'store'])->name('onsite.store');
         Route::get('/',[OnsiteController::class,'index'])->name('onsite.index');
         Route::get('/create/{id}',[OnsiteController::class,'create'])->name('onsite.create');
-        Route::get('/view/{id}', [OnsiteController::class, 'view'])->name('onsite.view');
+        Route::get('/show/{id}', [OnsiteController::class, 'show'])->name('onsite.show');
         Route::put('/update/{id}', [OnsiteController::class, 'update'])->name('onsite.update');
         
     });

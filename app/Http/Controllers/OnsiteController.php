@@ -148,4 +148,10 @@ class OnsiteController extends Controller
             return response()->json(['error' => 'Failed to save onsite visit details: ' . $e->getMessage()], 500);
         }
     }
+
+    public function show($id)
+{
+    $onsite = Onsite::findOrFail($id); // Retrieve the onsite record
+    return view('attendance.onsite-report.show', compact('onsite')); // Pass the record to the view
+}
 }

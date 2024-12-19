@@ -13,7 +13,7 @@
     {{-- <td>{{ $holiday->holiday_date }}</td> --}}
     <td data-column="10">
         <!-- View Button -->
-        <a href="#" class="btn btn-info btn-sm"
+        <a href="{{ route('onsite.show', ['id' => $onsite->id]) }}" class="btn btn-info btn-sm"
             style="margin-right: 5px; padding: 8px 12px;">View</a>
 
         <!-- Edit Button -->
