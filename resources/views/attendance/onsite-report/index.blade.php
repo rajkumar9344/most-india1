@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <div class="container p-4">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Onsite Report</h2>
-            <a href="{{ route('dashboard') }}" class="btn btn-black mb-5">
+            <a href="{{ route('dashboard') }}" class="btn btn-black mb-2">
                 <i class="fas fa-home"></i> Home
             </a>
         </div>
 
         <div class="card">
-            <h4>Employee Onsite Details</h4>
-            <div class="float-right">
-
-                <a href="#" class="btn btn-primary mb-3 mr-2 float-right">Export</a>
+            <div class="d-flex justify-content-between align-items-center m-4">
+                <h4>Employee Onsite Details</h4>
+                <a href="#" class="btn btn-primary">Export</a>
             </div>
 
             @if (session('error'))
@@ -39,7 +39,7 @@
 
 
 
-            <div class="card-body">
+            <div class="table-css">
                 <div class="card-header d-flex">
                     <!-- Column Visibility Toggle Button (Left Corner) -->
                     <div class="dropdown">

@@ -1,3 +1,7 @@
+{{-- attendace index page  --}}
+
+
+
 @extends('layouts.app')
 
 @section('content')
@@ -269,13 +273,6 @@
                 // let isOnsiteSubmitted = false; // Flag to track form submission
                 let isOnsiteSubmitted = true;
                 let isProcessingOnsiteSubmission = false;
-
-                // Temporary storage for pending leave details
-                let pendingLeaveDetails = {};
-
-                // Temporary storage for pending onsite details
-                let pendingOnsiteDetails = {};
-
                 const employeeTableBody = $('#employeeTableBody');
 
                 function fetchEmployees(department = 'All', date = $('#date').val()) {
@@ -384,123 +381,17 @@
 
                 $('#onsitModal').on('hide.bs.modal', function() {
                     $('#onsitModal *:focus').blur(); // Remove focus from modal's child elements
-                    const employeeId = $('#employeeIdOnsite').val();
+                    const employeeIdOnsite = $('#employeeIdOnsite').val();
 
                     if (isOnsiteSubmitted) {
-                        console.log(`Resetting status to 'present' for employee ID: ${employeeId}`);
-                        updateStatus(employeeId, 'present'); // Reset only if not submitted
+                        console.log(`Resetting status to 'present' for employee ID: ${employeeIdOnsite}`);
+                        updateStatus(employeeIdOnsite, 'present'); // Reset only if not submitted
                     } else {
-                        console.log(`Keeping status as 'onsite' for employee ID: ${employeeId}`);
+                        console.log(`Keeping status as 'onsite' for employee ID: ${employeeIdOnsite}`);
                     }
 
 
                 });
-
-
-                $('#submitAttendance').click(function(e) {
-                    e.preventDefault(); // Prevent default form submission
-
-                    // Serialize the attendance form data
-                    const attendanceFormData = $('form[action="{{ route('attendence.store') }}"]')
-                        .serializeArray();
-
-                    $.ajax({
-                        url: "{{ route('attendence.store') }}",
-                        method: "POST",
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        data: attendanceFormData,
-                        success: function(response) {
-                            console.log('Attendance submitted successfully:');
-
-                            // Handle leave submissions if any
-                            if (Object.keys(pendingLeaveDetails).length > 0) {
-                                for (const [employeeId, leaveData] of Object.entries(
-                                        pendingLeaveDetails)) {
-                                    saveLeaveDetails(employeeId, leaveData);
-                                }
-                            }
-                            // Save pending onsite details if any
-                            if (Object.keys(pendingOnsiteDetails).length > 0) {
-                                for (const [employeeId, onsiteData] of Object.entries(
-                                        pendingOnsiteDetails)) {
-                                    saveOnsiteDetails(employeeId, onsiteData);
-                                }
-                            }
-
-                            alert('Attendance details saved successfully.');
-                            pendingLeaveDetails
-                                = {}; // Clear temporary leave details after submission
-                            pendingOnsiteDetails
-                                = {}; // Clear temporary onsite details after submission
-                        },
-                        error: function(error) {
-                            console.error('Error submitting attendance:', error);
-                            alert('Failed to save attendance details.');
-                        }
-                    });
-                });
-
-
-
-                // Save Leave Details
-                function saveLeaveDetails(employeeId, leaveData) {
-                    $.ajax({
-                        url: "{{ route('leave.store') }}",
-                        method: "POST",
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        data: {
-                            employee_id: employeeId,
-                            leave_date: leaveData.leave_date,
-                            leave_type: leaveData.leave_type,
-                            leave_reason: leaveData.leave_reason,
-                            employee_name: leaveData.employee_name // Include employee name
-                        },
-                        success: function(response) {
-                            console.log(`Leave details for employee ${employeeId} saved successfully:`,
-                                response);
-                        },
-                        error: function(error) {
-                            console.error(`Failed to save leave details for employee ${employeeId}:`,
-                                error);
-                        }
-                    });
-                }
-
-                // Save Onsite Details (Final Submission)
-                function saveOnsiteDetails(employeeId, onsiteData) {
-                    $.ajax({
-                        url: "{{ route('onsite.store') }}",
-                        method: "POST",
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        data: {
-                            employee_id: employeeId,
-                            onsite_date: onsiteData.onsite_date,
-                            work_order_number: onsiteData.work_order_number,
-                            customer_name: onsiteData.customer_name,
-                            contact_person_name: onsiteData.contact_person_name,
-                            contact_number: onsiteData.contact_number,
-                            from_time: onsiteData.from_time,
-                            to_time: onsiteData.to_time,
-                            comment: onsiteData.comment,
-                            employee_name: onsiteData.employee_name // Include employee name
-                        },
-                        success: function(response) {
-                            console.log(`Onsite details for employee ${employeeId} saved successfully:`,
-                                response);
-                        },
-                        error: function(error) {
-                            console.error(`Failed to save onsite details for employee ${employeeId}:`,
-                                error);
-                        }
-                    });
-                }
-
                 // Save Leave Details when was subitted whole attendance then save leave details
 
                 $('#saveLeaveDetails').click(function() {
@@ -508,50 +399,63 @@
                     const leaveDate = $('#leaveDate').val();
                     const leaveType = $('#leaveType').val();
                     const leaveReason = $('#leaveReason').val();
-                    const employeeName = $('#employeeNameLeave').val();
 
                     if (leaveType && leaveDate && leaveReason) {
+                        $.ajax({
+                            url: "{{ route('leave.store') }}",
+                            method: "POST",
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            data: {
+                                employee_id: employeeId,
+                                leave_date: leaveDate,
+                                leave_type: leaveType,
+                                leave_reason: leaveReason,
+                                employee_name: $('#employeeNameLeave').val(), // Include employee name
 
-                        // Temporarily store leave details
-                        pendingLeaveDetails[employeeId] = {
-                            leave_type: leaveType,
-                            leave_date: leaveDate,
-                            leave_reason: leaveReason,
-                            employee_name: employeeName
-                        };
-
-                        console.log('Leave details temporarily saved:', pendingLeaveDetails);
-                        isLeaveSubmitted =
-                            true; // Set flag to true on successful submission
-                        updateStatus(employeeId, 'leave'); // Update status to onsite
-                        $('#leaveModal').modal('hide');
-                        alert('Leave details temporarily saved. Submit attendance to finalize.');
+                            },
+                            success: function() {
+                                console.log('Leave detail.', employeeId, leaveDate, leaveType,
+                                    leaveReason);
+                                isLeaveSubmitted =
+                                    true; // Set flag to true on successful submission
+                                updateStatus(employeeId, 'leave'); // Update status to onsite
+                                $('#leaveModal').modal('hide');
+                                console.log(isLeaveSubmitted)
+                                alert('Leave details saved successfully.');
+                            },
+                            error: function() {
+                                alert('Failed to save leave details.');
+                            }
+                        });
                     } else {
                         alert('Please fill in all fields.');
                     }
-
-
-
                 });
+           
+            //save onsite details 
+            $('#saveOnsiteDetails').click(function() {
+                const employeeIdOnsite = $('#employeeIdOnsite').val();
+                const onsitedate = $('#onsite_date').val();
+                const workOrderNumber = $('#workOrderNumber').val();
+                const customerName = $('#customerName').val();
+                const contactPersonName = $('#contactPersonName').val();
+                const contactNumber = $('#contactNumber').val();
+                const fromTime = $('#fromTime').val();
+                const toTime = $('#toTime').val();
+                const comment = $('#comment').val();
 
-                //save onsite details 
-                $('#saveOnsiteDetails').click(function() {
-                    const employeeId = $('#employeeIdOnsite').val();
-                    const onsitedate = $('#onsite_date').val();
-                    const workOrderNumber = $('#workOrderNumber').val();
-                    const customerName = $('#customerName').val();
-                    const contactPersonName = $('#contactPersonName').val();
-                    const contactNumber = $('#contactNumber').val();
-                    const fromTime = $('#fromTime').val();
-                    const toTime = $('#toTime').val();
-                    const comment = $('#comment').val();
-                    const employeeName = $('#employeeNameOnsite').val();
-
-                    if (workOrderNumber && customerName && contactPersonName && contactNumber && fromTime &&
-                        toTime) {
-                        isProcessingOnsiteSubmission = true;
-                        // Temporarily store onsite details
-                        pendingOnsiteDetails[employeeId] = {
+                if (workOrderNumber && customerName && contactPersonName && contactNumber && fromTime && toTime) {
+                    isProcessingOnsiteSubmission = true; // Indicate submission is in progress
+                    $.ajax({
+                        url: "{{ route('onsite.store') }}",
+                        method: "POST",
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: {
+                            employee_id: employeeIdOnsite,
                             onsite_date: onsitedate,
                             work_order_number: workOrderNumber,
                             customer_name: customerName,
@@ -560,20 +464,27 @@
                             from_time: fromTime,
                             to_time: toTime,
                             comment: comment,
-                            employee_name: employeeName
-                        };
-
-                        console.log('Onsite details temporarily saved:', pendingOnsiteDetails);
-                        isOnsiteSubmitted = false; // Mark the form as submitted
-                        updateStatus(employeeId, 'onsite'); // Update status to onsite
-                        $('#onsitModal').modal('hide');
-                        alert('Onsite details temporarily saved. Submit attendance to finalize.');
-                    } else {
-                        alert('Please fill in all fields.');
-                    }
-
-                });
-
+                            employee_name: $('#employeeNameOnsite').val(), // Include employee name
+                        },
+                        success: function() {
+                            isOnsiteSubmitted = false; // Mark the form as submitted
+                            updateStatus(employeeIdOnsite, 'onsite'); // Update status to onsite
+                            $('#onsitModal').modal('hide'); // Close the modal
+                            console.log(isOnsiteSubmitted)
+                            alert('Onsite details saved successfully.');
+                        },
+                        error: function(xhr) {
+                            const response = JSON.parse(xhr.responseText);
+                            console.error(response);
+                            isProcessingOnsiteSubmission = false; // Clear progress flag
+                            alert(`Error: ${response.message}`);
+                        },
+                    });
+                } else {
+                    alert('Please fill in all fields.');
+                }
             });
+
+        });
         </script>
     @endsection
